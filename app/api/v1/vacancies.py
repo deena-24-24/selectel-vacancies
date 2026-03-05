@@ -49,9 +49,9 @@ async def create_vacancy_endpoint(
     if payload.external_id is not None:
         existing = await get_vacancy_by_external_id(session, payload.external_id)
         if existing:
-            return JSONResponse(
-                status_code=status.HTTP_200_OK,
-                content={"detail": "Vacancy with external_id already exists"},
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Vacancy with external_id already exists",
             )
     return await create_vacancy(session, payload)
 
@@ -65,6 +65,15 @@ async def update_vacancy_endpoint(
     vacancy = await get_vacancy(session, vacancy_id)
     if not vacancy:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+
+    if payload.external_id is not None and payload.external_id != vacancy.external_id:
+        existing = await get_vacancy_by_external_id(session, payload.external_id)
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Vacancy with this external_id already exists",
+            )
+
     return await update_vacancy(session, vacancy, payload)
 
 
